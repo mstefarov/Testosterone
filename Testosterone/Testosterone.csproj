@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2A70426D-145D-45E3-B11D-13F90947F73C}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Testosterone</RootNamespace>
+    <AssemblyName>Testosterone</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>FemtoCraft.Server</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>acorn.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Networking\CPE.cs" />
+    <Compile Include="LvlMapConverter.cs" />
+    <Compile Include="NotchyMapGenerator.cs" />
+    <Compile Include="Physics\SnowPhysics.cs" />
+    <Compile Include="Utils\PerlinNoise.cs" />
+    <Compile Include="Physics\LavaPhysics.cs" />
+    <Compile Include="Physics\PhysicsUpdate.cs" />
+    <Compile Include="Physics\PlantPhysics.cs" />
+    <Compile Include="Physics\SandPhysics.cs" />
+    <Compile Include="Physics\WaterPhysics.cs" />
+    <Compile Include="Utils\BitList.cs" />
+    <Compile Include="Block.cs" />
+    <Compile Include="Config.cs" />
+    <Compile Include="Utils\IPAddressSet.cs" />
+    <Compile Include="DatMapConverter.cs" />
+    <Compile Include="Utils\JetBrains.Annotations.cs" />
+    <Compile Include="Commands.cs" />
+    <Compile Include="Networking\Heartbeat.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="Map.cs" />
+    <Compile Include="Networking\LineWrapper.cs" />
+    <Compile Include="Networking\OpCode.cs" />
+    <Compile Include="Networking\Packet.cs" />
+    <Compile Include="Networking\PacketReader.cs" />
+    <Compile Include="Networking\PacketWriter.cs" />
+    <Compile Include="Player.cs" />
+    <Compile Include="Utils\PlayerNameSet.cs" />
+    <Compile Include="Utils\Position.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\Util.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="acorn.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
