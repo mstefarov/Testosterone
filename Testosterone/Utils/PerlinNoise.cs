@@ -2,7 +2,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     // Based on Minecraft Classic's "com.mojang.minecraft.level.a.a.a"
     public sealed class FilteredNoise {
         readonly PerlinNoise noise1, noise2;

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class Commands {
         public static void Parse( [NotNull] Player player, [NotNull] string message ) {
             if( player == null ) throw new ArgumentNullException( "player" );

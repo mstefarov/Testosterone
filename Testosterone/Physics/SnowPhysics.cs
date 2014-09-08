@@ -2,7 +2,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class SnowPhysics {
         readonly Map map;
         public const int TickDelay = 2;

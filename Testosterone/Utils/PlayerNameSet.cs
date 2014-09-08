@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class PlayerNameSet {
         readonly HashSet<string> names = new HashSet<string>();
         readonly object syncRoot = new object();

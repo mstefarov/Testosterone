@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class PlantPhysics {
         readonly Map map;
         readonly Random random;

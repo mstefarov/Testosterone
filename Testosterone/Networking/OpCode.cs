@@ -1,6 +1,6 @@
 ﻿// Part of FemtoCraft | Copyright 2012-2013 Matvei Stefarov <me@matvei.org> | See LICENSE.txt
 
-namespace FemtoCraft {
+namespace Testosterone {
     enum OpCode : byte {
         Handshake = 0,
         Ping = 1,

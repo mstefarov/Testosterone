@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class LineWrapper : IEnumerable<Packet>, IEnumerator<Packet> {
         const string DefaultPrefixString = "> ";
         static readonly byte[] DefaultPrefix;

@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static unsafe class Util {
         [NotNull]
         public static string GenerateSalt() {

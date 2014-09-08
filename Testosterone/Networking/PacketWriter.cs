@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class PacketWriter : BinaryWriter {
         public PacketWriter( [NotNull] Stream stream ) :
             base( stream ) {}

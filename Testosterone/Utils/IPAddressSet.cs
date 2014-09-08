@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class IPAddressSet {
         readonly HashSet<IPAddress> addresses = new HashSet<IPAddress>();
         readonly object syncRoot = new object();

@@ -6,7 +6,7 @@ using System.IO.Compression;
 using System.Net;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class DatMapConverter {
         static readonly byte[] Mapping = new byte[256];
 

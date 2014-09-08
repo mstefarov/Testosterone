@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class NotchyMapGenerator {
         const int TerrainFeatureOctaves = 6,
                   TerrainDetailOctaves = 8,

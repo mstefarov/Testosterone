@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class Logger {
         const string LogFileName = "server.log";
         static readonly object LogLock = new object();

@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Net;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class Config {
         public static string ServerName = "FemtoCraft Server";
         public static string MOTD = "Welcome to the server!";

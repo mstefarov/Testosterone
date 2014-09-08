@@ -3,7 +3,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     public struct Position {
         public short X, Y, Z;
         public byte R, L;

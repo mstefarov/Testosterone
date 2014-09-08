@@ -2,7 +2,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     unsafe sealed class WaterPhysics {
         public const int TickDelay = 0;
         const int SpongeRange = 2;

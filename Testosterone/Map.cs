@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed partial class Map {
         public const Block MaxLegalBlockType = Block.Obsidian;
 

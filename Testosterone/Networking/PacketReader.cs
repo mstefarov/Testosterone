@@ -4,7 +4,7 @@ using System.Net;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class PacketReader : BinaryReader {
         public PacketReader( [NotNull] Stream stream ) :
             base( stream ) { }

@@ -1,6 +1,6 @@
 ﻿// Part of FemtoCraft | Copyright 2012-2013 Matvei Stefarov <me@matvei.org> | See LICENSE.txt
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class BitList {
         readonly int[] array;
 

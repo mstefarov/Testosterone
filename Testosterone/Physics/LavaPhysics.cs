@@ -3,7 +3,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class LavaPhysics {
         public const int TickDelay = 5;
         public const Block LavaPlusWater = Block.Stone;

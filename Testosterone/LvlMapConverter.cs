@@ -5,7 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class LvlMapConverter {
         const ushort MagicNumber = 0xFECF;
 

@@ -46,6 +46,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MovementHandler.cs" />
+    <Compile Include="Packets\IPacket.cs" />
     <Compile Include="Networking\CPE.cs" />
     <Compile Include="LvlMapConverter.cs" />
     <Compile Include="NotchyMapGenerator.cs" />

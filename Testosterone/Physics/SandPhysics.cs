@@ -3,7 +3,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed class SandPhysics {
         readonly Map map;
 

@@ -3,7 +3,7 @@ using System;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     partial struct Packet {
         public const byte ProtocolVersion = 7;
         public readonly byte[] Bytes;

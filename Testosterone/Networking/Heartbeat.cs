@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Cache;
 using System.Threading;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class Heartbeat {
         static readonly TimeSpan Timeout = TimeSpan.FromSeconds( 10 );
         static readonly TimeSpan Delay = TimeSpan.FromSeconds( 25 );

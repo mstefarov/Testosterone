@@ -8,7 +8,7 @@ using System.Threading;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     static class Server {
         public const string VersionString = "FemtoCraft 1.35";
 

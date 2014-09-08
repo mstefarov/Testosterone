@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using JetBrains.Annotations;
 
-namespace FemtoCraft {
+namespace Testosterone {
     sealed partial class Player {
         const string CustomBlocksExtName = "CustomBlocks";
         const int CustomBlocksExtVersion = 1;
@@ -21,33 +21,33 @@ namespace FemtoCraft {
 
         bool NegotiateProtocolExtension() {
             // write our ExtInfo and ExtEntry packets
-            writer.Write( Packet.MakeExtInfo( 2 ).Bytes );
-            writer.Write( Packet.MakeExtEntry( CustomBlocksExtName, CustomBlocksExtVersion ).Bytes );
-            writer.Write( Packet.MakeExtEntry( BlockPermissionsExtName, BlockPermissionsExtVersion ).Bytes );
+            Writer.Write( Packet.MakeExtInfo( 2 ).Bytes );
+            Writer.Write( Packet.MakeExtEntry( CustomBlocksExtName, CustomBlocksExtVersion ).Bytes );
+            Writer.Write( Packet.MakeExtEntry( BlockPermissionsExtName, BlockPermissionsExtVersion ).Bytes );
 
             // Expect ExtInfo reply from the client
-            OpCode extInfoReply = reader.ReadOpCode();
+            OpCode extInfoReply = Reader.ReadOpCode();
             //Logger.Log( "Expected: {0} / Received: {1}", OpCode.ExtInfo, extInfoReply );
             if( extInfoReply != OpCode.ExtInfo ) {
                 Logger.LogWarning( "Player {0} from {1}: Unexpected ExtInfo reply ({2})", Name, IP, extInfoReply );
                 return false;
             }
-            ClientName = reader.ReadString();
-            int expectedEntries = reader.ReadInt16();
+            ClientName = Reader.ReadString();
+            int expectedEntries = Reader.ReadInt16();
 
             // wait for client to send its ExtEntries
             bool sendCustomBlockPacket = false;
             List<string> clientExts = new List<string>();
             for( int i = 0; i < expectedEntries; i++ ) {
                 // Expect ExtEntry replies (0 or more)
-                OpCode extEntryReply = reader.ReadOpCode();
+                OpCode extEntryReply = Reader.ReadOpCode();
                 //Logger.Log( "Expected: {0} / Received: {1}", OpCode.ExtEntry, extEntryReply );
                 if( extEntryReply != OpCode.ExtEntry ) {
                     Logger.LogWarning( "Player {0} from {1}: Unexpected ExtEntry reply ({2})", Name, IP, extInfoReply );
                     return false;
                 }
-                string extName = reader.ReadString();
-                int extVersion = reader.ReadInt32();
+                string extName = Reader.ReadString();
+                int extVersion = Reader.ReadInt32();
                 if( extName == CustomBlocksExtName && extVersion == CustomBlocksExtVersion ) {
                     // Hooray, client supports custom blocks! We still need to check support level.
                     sendCustomBlockPacket = true;
@@ -70,10 +70,10 @@ namespace FemtoCraft {
                 // if client also supports CustomBlockSupportLevel, figure out what level to use
 
                 // Send CustomBlockSupportLevel
-                writer.Write( Packet.MakeCustomBlockSupportLevel( CustomBlocksLevel ).Bytes );
+                Writer.Write( Packet.MakeCustomBlockSupportLevel( CustomBlocksLevel ).Bytes );
 
                 // Expect CustomBlockSupportLevel reply
-                OpCode customBlockSupportLevelReply = reader.ReadOpCode();
+                OpCode customBlockSupportLevelReply = Reader.ReadOpCode();
                 //Logger.Log( "Expected: {0} / Received: {1}", OpCode.CustomBlockSupportLevel, customBlockSupportLevelReply );
                 if( customBlockSupportLevelReply != OpCode.CustomBlockSupportLevel ) {
                     Logger.LogWarning( "Player {0} from {1}: Unexpected CustomBlockSupportLevel reply ({2})",
@@ -82,7 +82,7 @@ namespace FemtoCraft {
                                        customBlockSupportLevelReply );
                     return false;
                 }
-                byte clientLevel = reader.ReadByte();
+                byte clientLevel = Reader.ReadByte();
                 UsesCustomBlocks = ( clientLevel >= CustomBlocksLevel );
             }
             return true;
