@@ -3,26 +3,6 @@ using System.IO;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-    internal class DataTransferEventArgs : EventArgs {
-        public DataTransferEventArgs(byte[] data) {
-            Data = data;
-        }
-
-
-        public byte[] Data { get; private set; }
-    }
-
-
-    internal class DataRequestedEventArgs : EventArgs {
-        public DataRequestedEventArgs(int bytesRequested) {
-            BytesRequested = bytesRequested;
-        }
-
-
-        public int BytesRequested { get; private set; }
-    }
-
-
     // Class used to count bytes read-from/written-to non-seekable streams.
     internal class LoggingStream : Stream {
         public event EventHandler<DataTransferEventArgs> DataRead;
@@ -71,7 +51,7 @@ namespace Testosterone {
                 ReadRequested.Raise(this, new DataRequestedEventArgs(count));
 
                 bytesActuallyRead = baseStream.Read(buffer, offset, count);
-                
+
                 BytesRead += bytesActuallyRead;
                 byte[] readData = new byte[bytesActuallyRead];
                 Buffer.BlockCopy(buffer, offset, readData, 0, bytesActuallyRead);
@@ -95,7 +75,7 @@ namespace Testosterone {
                 WriteRequested.Raise(this, new DataTransferEventArgs(dataToWrite));
 
                 baseStream.Write(buffer, offset, count);
-                
+
                 BytesWritten += count;
                 DataWritten.Raise(this, new DataTransferEventArgs(dataToWrite));
             }
@@ -113,7 +93,7 @@ namespace Testosterone {
             readingOneByte = true;
             int value = base.ReadByte();
             readingOneByte = false;
-            
+
             // Raise DataRead event, unless this is part of a multi-byte read op
             if (!readingManyBytes) {
                 byte[] readData;
@@ -135,7 +115,7 @@ namespace Testosterone {
             if (!writingManyBytes) {
                 WriteRequested.Raise(this, new DataTransferEventArgs(new[] { value }));
             }
-            
+
             writingOneByte = true;
             base.WriteByte(value);
             writingOneByte = false;
@@ -170,5 +150,23 @@ namespace Testosterone {
 
         public long BytesRead { get; private set; }
         public long BytesWritten { get; private set; }
+    }
+
+
+    internal class DataTransferEventArgs : EventArgs {
+        public DataTransferEventArgs(byte[] data) {
+            Data = data;
+        }
+
+        public byte[] Data { get; private set; }
+    }
+
+
+    internal class DataRequestedEventArgs : EventArgs {
+        public DataRequestedEventArgs(int bytesRequested) {
+            BytesRequested = bytesRequested;
+        }
+
+        public int BytesRequested { get; private set; }
     }
 }

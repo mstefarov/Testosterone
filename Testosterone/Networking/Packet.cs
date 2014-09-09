@@ -4,7 +4,7 @@ using System.Text;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-    partial struct Packet {
+    public partial struct Packet {
         public const byte ProtocolVersion = 7;
         public readonly byte[] Bytes;
 

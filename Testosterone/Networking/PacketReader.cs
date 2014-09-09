@@ -5,7 +5,7 @@ using System.Text;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-    sealed class PacketReader : BinaryReader {
+    public sealed class PacketReader : BinaryReader {
         public PacketReader( [NotNull] Stream stream ) :
             base( stream ) { }
 

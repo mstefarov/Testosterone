@@ -6,7 +6,7 @@ using System.Diagnostics;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-    sealed partial class Map {
+    public sealed partial class Map {
         public const Block MaxLegalBlockType = Block.Obsidian;
 
         public readonly int Width,

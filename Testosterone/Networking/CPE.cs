@@ -6,7 +6,7 @@ using System.Text;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-    sealed partial class Player {
+    public sealed partial class Player {
         const string CustomBlocksExtName = "CustomBlocks";
         const int CustomBlocksExtVersion = 1;
         const string BlockPermissionsExtName = "BlockPermissions";
@@ -108,7 +108,7 @@ namespace Testosterone {
     }
 
 
-    partial struct Packet {
+    public partial struct Packet {
         [Pure]
         public static Packet MakeExtInfo( short extCount ) {
             // Logger.Log( "Send: ExtInfo({0},{1})", Server.VersionString, extCount );
@@ -147,7 +147,7 @@ namespace Testosterone {
     }
 
 
-    sealed partial class Map {
+    public sealed partial class Map {
         public const Block MaxCustomBlockType = Block.StoneBrick;
         readonly static Block[] FallbackBlocks = new Block[256];
 

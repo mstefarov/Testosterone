@@ -1,7 +1,7 @@
 ﻿// Part of FemtoCraft | Copyright 2012-2013 Matvei Stefarov <me@matvei.org> | See LICENSE.txt
 
 namespace Testosterone {
-    enum OpCode : byte {
+    public enum OpCode : byte {
         Handshake = 0,
         Ping = 1,
         MapBegin = 2,

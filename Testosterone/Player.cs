@@ -12,10 +12,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using JetBrains.Annotations;
-using Testosterone;
 
 namespace Testosterone {
-    sealed partial class Player {
+    public sealed partial class Player {
         public static readonly Player Console = new Player( "(console)" );
 
         [NotNull]

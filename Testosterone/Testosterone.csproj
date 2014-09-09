@@ -52,6 +52,9 @@
     <Compile Include="Networking\CPE.cs" />
     <Compile Include="LvlMapConverter.cs" />
     <Compile Include="NotchyMapGenerator.cs" />
+    <Compile Include="Packets\IPacketDescriptor.cs" />
+    <Compile Include="Packets\PacketDirection.cs" />
+    <Compile Include="Packets\PacketManager.cs" />
     <Compile Include="Physics\SnowPhysics.cs" />
     <Compile Include="Utils\PerlinNoise.cs" />
     <Compile Include="Physics\LavaPhysics.cs" />
