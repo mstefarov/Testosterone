@@ -56,6 +56,7 @@ namespace Testosterone {
                   SleepDelay = 5;
         readonly TcpClient client;
         NetworkStream stream;
+        LoggingStream loggingStream;
         public PacketReader Reader;
         public PacketWriter Writer;
 
@@ -84,6 +85,7 @@ namespace Testosterone {
             if( newClient == null ) throw new ArgumentNullException( "newClient" );
             try {
                 client = newClient;
+                movementHandler = new MovementHandler(this);
                 Thread thread = new Thread( IoThread ) {
                     IsBackground = true
                 };
@@ -100,11 +102,13 @@ namespace Testosterone {
             try {
                 client.SendTimeout = Timeout;
                 client.ReceiveTimeout = Timeout;
+                client.NoDelay = true;
                 IP = ((IPEndPoint)(client.Client.RemoteEndPoint)).Address;
                 Name = "from " + IP; // placeholder for logging
                 stream = client.GetStream();
-                Reader = new PacketReader( stream );
-                Writer = new PacketWriter( stream );
+                loggingStream = new LoggingStream(stream);
+                Reader = new PacketReader( loggingStream );
+                Writer = new PacketWriter( loggingStream );
                 throttleCheckTimer = DateTime.UtcNow + ThrottleInterval;
 
                 if( !LoginSequence() ) return;

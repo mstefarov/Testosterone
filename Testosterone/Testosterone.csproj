@@ -36,7 +36,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>FemtoCraft.Server</StartupObject>
+    <StartupObject>Testosterone.Server</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>acorn.ico</ApplicationIcon>
@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MovementHandler.cs" />
+    <Compile Include="Networking\LoggingStream.cs" />
     <Compile Include="Packets\IPacket.cs" />
     <Compile Include="Networking\CPE.cs" />
     <Compile Include="LvlMapConverter.cs" />
