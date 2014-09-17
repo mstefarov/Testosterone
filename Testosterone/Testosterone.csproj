@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="MovementHandler.cs" />
     <Compile Include="Networking\LoggingStream.cs" />
+    <Compile Include="Networking\PacketTransferMode.cs" />
     <Compile Include="Packets\IPacket.cs" />
     <Compile Include="Networking\CPE.cs" />
     <Compile Include="LvlMapConverter.cs" />
