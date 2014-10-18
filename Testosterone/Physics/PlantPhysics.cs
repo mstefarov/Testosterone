@@ -92,7 +92,7 @@ namespace Testosterone {
 
         // die if block is lit, or if block underneath is not stone/gravel/cobblestone
         void TriggerMushroom( int x, int y, int z ) {
-            if( !map.Server.config.PhysicsPlants ) return;
+            if( !Config.PhysicsPlants ) return;
             Block blockUnder = map.GetBlock( x, y, z - 1 );
             if( blockUnder != Block.Stone && blockUnder != Block.Gravel && blockUnder != Block.Cobble ||
                 IsLit( x, y, z ) ) {
@@ -103,7 +103,7 @@ namespace Testosterone {
 
         // die if block is not lit, or if block underneath is not grass/dirt
         void TriggerFlower( int x, int y, int z ) {
-            if( !map.Server.config.PhysicsPlants ) return;
+            if( !Config.PhysicsPlants ) return;
             Block blockUnder = map.GetBlock( x, y, z - 1 );
             if( blockUnder != Block.Grass && blockUnder != Block.Dirt || !IsLit( x, y, z ) ) {
                 map.SetBlock( null, x, y, z, Block.Air );
@@ -112,7 +112,7 @@ namespace Testosterone {
 
 
         void TriggerGrass( int x, int y, int z ) {
-            if( !map.Server.config.PhysicsGrass ) return;
+            if( !Config.PhysicsGrass ) return;
 
             // only trigger 25% of the time
             if( random.Next( 4 ) != 0 ) return;
@@ -137,13 +137,13 @@ namespace Testosterone {
 
 
         void TriggerSapling( int x, int y, int z ) {
-            if( !map.Server.config.PhysicsPlants ) return;
+            if( !Config.PhysicsPlants ) return;
             Block blockUnder = map.GetBlock( x, y, z - 1 );
             if( blockUnder != Block.Grass && blockUnder != Block.Dirt || !IsLit( x, y, z ) ) {
                 map.SetBlock( null, x, y, z, Block.Air );
                 return;
             }
-            if( map.Server.config.PhysicsTrees && random.Next( 5 ) == 0 ) {
+            if( Config.PhysicsTrees && random.Next( 5 ) == 0 ) {
                 map.SetBlockNoUpdate( x, y, z, Block.Air );
                 if( !map.GrowTree( random, x, y, z ) ) {
                     map.SetBlockNoUpdate( x, y, z, Block.Sapling );

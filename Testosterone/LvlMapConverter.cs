@@ -56,7 +56,7 @@ namespace Testosterone {
                         map.ConvertBlockTypes( Mapping );
                     }
 
-                    // TODO: enable physics if config.Physics is on
+                    if( Config.Physics ) map.EnablePhysics();
                     return map;
                 }
             }

@@ -7,18 +7,8 @@ using System.Net;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-   public class Commands {
-       readonly Server server;
-       readonly Config config;
-
-       public Commands([NotNull] Server server) {
-           if (server == null) throw new ArgumentNullException("server");
-           this.server = server;
-           config = server.config;
-       }
-
-
-       public void Parse( [NotNull] Player player, [NotNull] string message ) {
+    static class Commands {
+        public static void Parse( [NotNull] Player player, [NotNull] string message ) {
             if( player == null ) throw new ArgumentNullException( "player" );
             if( message == null ) throw new ArgumentNullException( "message" );
             string command, param;
@@ -46,6 +36,19 @@ namespace Testosterone {
                 case "kick":
                 case "k":
                     KickHandler( player, param );
+                    break;
+
+                case "ban":
+                    BanHandler( player, param );
+                    break;
+                case "unban":
+                    UnbanHandler( player, param );
+                    break;
+                case "banip":
+                    BanIPHandler( player, param );
+                    break;
+                case "unbanip":
+                    UnbanIPHandler( player, param );
                     break;
 
                 case "solid":
@@ -126,10 +129,10 @@ namespace Testosterone {
         }
 
 
-        void OpsHandler( [NotNull] Player player ) {
-            if( !config.RevealOps && !player.CheckIfOp() ) return;
-            if( server.Ops.Count > 0 ) {
-                string[] opNames = server.Ops.GetCopy();
+        static void OpsHandler( [NotNull] Player player ) {
+            if( !Config.RevealOps && !player.CheckIfOp() ) return;
+            if( Server.Ops.Count > 0 ) {
+                string[] opNames = Server.Ops.GetCopy();
                 Array.Sort( opNames, StringComparer.OrdinalIgnoreCase );
                 player.Message( "Ops: {0}", opNames.JoinToString( ", " ) );
             } else {
@@ -138,17 +141,17 @@ namespace Testosterone {
         }
 
 
-        void OpHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void OpHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            if( server.Ops.Add( targetName ) ) {
-                Player target = server.FindPlayerExact( targetName );
+            if( Server.Ops.Add( targetName ) ) {
+                Player target = Server.FindPlayerExact( targetName );
                 if( target != null ) {
                     target.IsOp = true;
                     target.Message( "You are now op!" );
-                    server.Players.Message( "Player {0} was opped by {1}",
+                    Server.Players.Message( "Player {0} was opped by {1}",
                                             target.Name, player.Name );
                 } else {
-                    server.Players.Message( "Player {0} (offline) was opped by {1}",
+                    Server.Players.Message( "Player {0} (offline) was opped by {1}",
                                             targetName, player.Name );
                 }
             } else {
@@ -157,10 +160,10 @@ namespace Testosterone {
         }
 
 
-        void DeopHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void DeopHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            if( server.Ops.Remove( targetName ) ) {
-                Player target = server.FindPlayerExact( targetName );
+            if( Server.Ops.Remove( targetName ) ) {
+                Player target = Server.FindPlayerExact( targetName );
                 if( target != null ) {
                     targetName = target.Name;
                     target.IsOp = false;
@@ -169,10 +172,10 @@ namespace Testosterone {
                     target.PlaceLava = false;
                     target.PlaceGrass = false;
                     target.Message( "You are no longer op." );
-                    server.Players.Message( "Player {0} was deopped by {1}",
+                    Server.Players.Message( "Player {0} was deopped by {1}",
                                             targetName, player.Name );
                 } else {
-                    server.Players.Message( "Player {0} (offline) was deopped by {1}",
+                    Server.Players.Message( "Player {0} (offline) was deopped by {1}",
                                             targetName, player.Name );
                 }
             } else {
@@ -181,78 +184,155 @@ namespace Testosterone {
         }
 
 
-        void KickHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void KickHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            Player target = server.FindPlayer( player, targetName );
+            Player target = Server.FindPlayer( player, targetName );
             if( target == null ) return;
             target.Kick( "Kicked by " + player.Name );
-            server.Players.Message( "Player {0} was kicked by {1}",
+            Server.Players.Message( "Player {0} was kicked by {1}",
                                     target.Name, player.Name );
         }
 
 
-         void SolidHandler( [NotNull] Player player ) {
-            if( !player.CheckIfAllowed( config.AllowSolidBlocks, config.OpAllowSolidBlocks ) ) return;
+        static void BanHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+            if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
+            if( Server.Bans.Add( targetName ) ) {
+                Player target = Server.FindPlayerExact( targetName );
+                if( target != null ) {
+                    target.Kick( "Banned by " + player.Name );
+                    Server.Players.Message( "Player {0} was banned by {1}",
+                                            target.Name, player.Name );
+                } else {
+                    Server.Players.Message( "Player {0} (offline) was banned by {1}",
+                                            targetName, player.Name );
+                }
+            } else {
+                player.Message( "Player {0} is already banned.", targetName );
+            }
+        }
+
+
+        static void UnbanHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+            if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
+            if( Server.Bans.Remove( targetName ) ) {
+                Server.Players.Message( "Player {0} was unbanned by {1}",
+                                        targetName, player.Name );
+            } else {
+                player.Message( "Unban: Player {0} is not banned.", targetName );
+            }
+        }
+
+
+        static void BanIPHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+            if( !player.CheckIfOp() ) return;
+            if( targetName == null ) {
+                player.Message( "BanIP: Player name or IP address required." );
+                return;
+            }
+
+            IPAddress ip;
+            Player target = Server.FindPlayer( player, targetName );
+            if( target != null ) {
+                ip = target.IP;
+                Server.Bans.Add( target.Name );
+            } else if( !IPAddress.TryParse( targetName, out ip ) ) {
+                player.Message( "BanIP: Player name or IP address required." );
+                return;
+            }
+
+            if( Server.IPBans.Add( ip ) ) {
+                Logger.Log( "IP address {0} was banned by {1}", ip, player.Name );
+                var everyoneOnIP = Server.Players.Where( p => p.IP.Equals( ip ) );
+                foreach( Player playerOnIP in everyoneOnIP ) {
+                    playerOnIP.Kick( "IP-Banned by " + player.Name );
+                    Server.Players.Message( "Player {0} was IP-banned by {1}",
+                                            playerOnIP.Name, player.Name );
+                }
+            } else {
+                player.Message( "Given IP ({0}) is already banned.", ip );
+            }
+        }
+
+
+        static void UnbanIPHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+            if( !player.CheckIfOp() ) return;
+            IPAddress ip;
+            if( targetName == null || !IPAddress.TryParse( targetName, out ip ) ) {
+                player.Message( "UnbanIP: IP address required." );
+                return;
+            }
+            if( Server.IPBans.Remove( ip ) ) {
+                Logger.Log( "IP address {0} was unbanned by {1}", ip, player.Name );
+                player.Message( "UnbanIP: Unbanned {0}", ip );
+
+            } else {
+                player.Message( "Given IP ({0}) is not banned.", ip );
+            }
+        }
+
+
+        static void SolidHandler( [NotNull] Player player ) {
+            if( !player.CheckIfAllowed( Config.AllowSolidBlocks, Config.OpAllowSolidBlocks ) ) return;
             player.Message( player.PlaceSolid ? "Solid: OFF" : "Solid: ON" );
             player.PlaceSolid = !player.PlaceSolid;
         }
 
 
-         void WaterHandler( [NotNull] Player player ) {
-            if( !player.CheckIfAllowed( config.AllowWaterBlocks, config.OpAllowWaterBlocks ) ) return;
+        static void WaterHandler( [NotNull] Player player ) {
+            if( !player.CheckIfAllowed( Config.AllowWaterBlocks, Config.OpAllowWaterBlocks ) ) return;
             player.Message( player.PlaceWater ? "Water: OFF" : "Water: ON" );
             player.PlaceWater = !player.PlaceWater;
         }
 
 
-         void LavaHandler( [NotNull] Player player ) {
-            if( !player.CheckIfAllowed( config.AllowLavaBlocks, config.OpAllowLavaBlocks ) ) return;
+        static void LavaHandler( [NotNull] Player player ) {
+            if( !player.CheckIfAllowed( Config.AllowLavaBlocks, Config.OpAllowLavaBlocks ) ) return;
             player.Message( player.PlaceLava ? "Lava: OFF" : "Lava: ON" );
             player.PlaceLava = !player.PlaceLava;
         }
 
 
-         void GrassHandler( [NotNull] Player player ) {
-            if( !player.CheckIfAllowed( config.AllowGrassBlocks, config.OpAllowGrassBlocks ) ) return;
+        static void GrassHandler( [NotNull] Player player ) {
+            if( !player.CheckIfAllowed( Config.AllowGrassBlocks, Config.OpAllowGrassBlocks ) ) return;
             player.Message( player.PlaceGrass ? "Grass: OFF" : "Grass: ON" );
             player.PlaceGrass = !player.PlaceGrass;
         }
 
 
-         void SayHandler( [NotNull] Player player, [CanBeNull] string message ) {
+        static void SayHandler( [NotNull] Player player, [CanBeNull] string message ) {
             if( !player.CheckIfOp() ) return;
             if( message == null ) message = "";
-            server.Players.Message( null, false, "&C" + message );
+            Server.Players.Message( null, false, "&C" + message );
         }
 
 
-         void TeleportHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void TeleportHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            if( player == server.ConsolePlayer ) {
+            if( player == Player.Console ) {
                 player.Message( "Can't teleport from console!" );
                 return;
             }
-            Player target = server.FindPlayer( player, targetName );
+            Player target = Server.FindPlayer( player, targetName );
             if( target == null ) return;
             player.Send( Packet.MakeSelfTeleport( target.Position ) );
         }
 
 
-         void BringHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void BringHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            if( player == server.ConsolePlayer ) {
+            if( player == Player.Console ) {
                 player.Message( "Can't bring from console!" );
                 return;
             }
-            Player target = server.FindPlayer( player, targetName );
+            Player target = Server.FindPlayer( player, targetName );
             if( target == null ) return;
             target.Send( Packet.MakeSelfTeleport( player.Position ) );
         }
 
 
-         void SetSpawnHandler( [NotNull] Player player ) {
+        static void SetSpawnHandler( [NotNull] Player player ) {
             if( !player.CheckIfOp() ) return;
-            if( player == server.ConsolePlayer ) {
+            if( player == Player.Console ) {
                 player.Message( "Can't set spawn from console!" );
                 return;
             }
@@ -260,13 +340,13 @@ namespace Testosterone {
             player.Map.ChangedSinceSave = true;
             player.Send( Packet.MakeAddEntity( 255, player.Name, player.Map.Spawn.GetFixed() ) );
             player.Send( Packet.MakeSelfTeleport( player.Map.Spawn ) );
-            server.Players.Message( "Player {0} set a new spawn point.", player.Name );
+            Server.Players.Message( "Player {0} set a new spawn point.", player.Name );
         }
 
 
-         void WhitelistHandler( [NotNull] Player player ) {
-            if( config.UseWhitelist ) {
-                string[] whitelistNames = server.Whitelist.GetCopy();
+        static void WhitelistHandler( [NotNull] Player player ) {
+            if( Config.UseWhitelist ) {
+                string[] whitelistNames = Server.Whitelist.GetCopy();
                 Array.Sort( whitelistNames, StringComparer.OrdinalIgnoreCase );
                 player.Message( "Whitelist: {0}", whitelistNames.JoinToString( ", " ) );
             } else {
@@ -275,34 +355,34 @@ namespace Testosterone {
         }
 
 
-         void WhitelistAddHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void WhitelistAddHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            if( !config.UseWhitelist ) {
+            if( !Config.UseWhitelist ) {
                 player.Message( "Whitelist is disabled." );
                 return;
             }
-            if( server.Whitelist.Add( targetName ) ) {
-                server.Players.Message("Player {0} was whitelisted by {1}",
-                               targetName, player.Name );
+            if( Server.Whitelist.Add( targetName ) ) {
+                Server.Players.Message( "Player {0} was whitelisted by {1}",
+                                        targetName, player.Name );
             } else {
                 player.Message( "Player {0} is already whitelisted.", targetName );
             }
         }
 
 
-         void WhitelistRemoveHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
+        static void WhitelistRemoveHandler( [NotNull] Player player, [CanBeNull] string targetName ) {
             if( !player.CheckIfOp() || !player.CheckPlayerName( targetName ) ) return;
-            if( !config.UseWhitelist ) {
+            if( !Config.UseWhitelist ) {
                 player.Message( "Whitelist is disabled." );
                 return;
             }
-            if( server.Whitelist.Add( targetName ) ) {
-                Player target = server.FindPlayerExact( targetName );
+            if( Server.Whitelist.Add( targetName ) ) {
+                Player target = Server.FindPlayerExact( targetName );
                 if( target != null ) {
                     targetName = target.Name;
                     target.Kick( "Removed from whitelist by " + player.Name );
                 }
-                server.Players.Message( "Player {0} was removed from whitelist by {1}",
+                Server.Players.Message( "Player {0} was removed from whitelist by {1}",
                                         targetName, player.Name );
             } else {
                 player.Message( "Player {0} is not whitelisted.", targetName );
@@ -310,7 +390,7 @@ namespace Testosterone {
         }
 
 
-         void LoadHandler( [NotNull] Player player, [CanBeNull] string fileName ) {
+        static void LoadHandler( [NotNull] Player player, [CanBeNull] string fileName ) {
             if( !player.CheckIfOp() ) return;
             if( fileName == null ) {
                 player.Message( "Load: Filename required." );
@@ -319,22 +399,24 @@ namespace Testosterone {
             try {
                 player.MessageNow( "Loading map, please wait..." );
                 Map map;
-                if( fileName.EndsWith( ".lvl", StringComparison.OrdinalIgnoreCase ) ) {
+                if( fileName.EndsWith( ".dat", StringComparison.OrdinalIgnoreCase ) ) {
+                    map = DatMapConverter.Load( fileName );
+                } else if( fileName.EndsWith( ".lvl", StringComparison.OrdinalIgnoreCase ) ) {
                     map = LvlMapConverter.Load( fileName );
                 } else {
                     player.Message( "Load: Unsupported map format." );
                     return;
                 }
-                server.Players.Message( "Player {0} changed map to {1}",
+                Server.Players.Message( "Player {0} changed map to {1}",
                                         player.Name, Path.GetFileName( fileName ) );
-                server.ChangeMap( map );
+                Server.ChangeMap( map );
             } catch( Exception ex ) {
                 player.Message( "Could not load map: {0}: {1}", ex.GetType().Name, ex.Message );
             }
         }
 
 
-         void SaveHandler( [NotNull] Player player, [CanBeNull] string fileName ) {
+        static void SaveHandler( [NotNull] Player player, [CanBeNull] string fileName ) {
             if( !player.CheckIfOp() ) return;
             if( fileName == null || !fileName.EndsWith( ".lvl" ) ) {
                 player.Message( "Load: Filename must end with .lvl" );
@@ -350,21 +432,21 @@ namespace Testosterone {
         }
 
 
-         void PhysicsHandler( [NotNull] Player player, [CanBeNull] string param ) {
+        static void PhysicsHandler( [NotNull] Player player, [CanBeNull] string param ) {
             if( !player.CheckIfOp() ) return;
             if( param == null ) param = "";
             switch( param.ToLower() ) {
                 case "":
                     // print info
-                    player.Message( "Physics are: {0}", config.Physics ? "ON" : "OFF" );
+                    player.Message( "Physics are: {0}", Config.Physics ? "ON" : "OFF" );
                     List<string> modules = new List<string>();
-                    if( config.PhysicsGrass ) modules.Add( "grass" );
-                    if( config.PhysicsLava ) modules.Add( "lava" );
-                    if( config.PhysicsPlants ) modules.Add( "plants" );
-                    if( config.PhysicsSand ) modules.Add( "sand" );
-                    if( config.PhysicsSnow ) modules.Add( "snow" ); // TODO: CPE-ify
-                    if( config.PhysicsTrees ) modules.Add( "trees" );
-                    if( config.PhysicsWater ) modules.Add( "water" );
+                    if( Config.PhysicsGrass ) modules.Add( "grass" );
+                    if( Config.PhysicsLava ) modules.Add( "lava" );
+                    if( Config.PhysicsPlants ) modules.Add( "plants" );
+                    if( Config.PhysicsSand ) modules.Add( "sand" );
+                    if( Config.PhysicsSnow && Config.ProtocolExtension ) modules.Add( "snow" );
+                    if( Config.PhysicsTrees ) modules.Add( "trees" );
+                    if( Config.PhysicsWater ) modules.Add( "water" );
                     if( modules.Count == 0 ) {
                         player.Message( "None of the modules are enabled." );
                     } else {
@@ -375,11 +457,12 @@ namespace Testosterone {
 
                 case "on":
                     // toggle selected things on
-                    if( server.config.Physics ) {
+                    if( Config.Physics ) {
                         player.Message( "Physics are already enabled." );
                     } else {
                         player.MessageNow( "Enabling physics, please wait..." );
-                        server.config.Physics = true;
+                        Config.Physics = true;
+                        Config.Save();
                         player.Map.EnablePhysics();
                         Logger.Log( "Player {0} enabled physics.",
                                     player.Name );
@@ -389,10 +472,11 @@ namespace Testosterone {
 
                 case "off":
                     // toggle everything off
-                    if( !config.Physics ) {
+                    if( !Config.Physics ) {
                         player.Message( "Physics are already disabled." );
                     } else {
-                        config.Physics = false;
+                        Config.Physics = false;
+                        Config.Save();
                         player.Map.DisablePhysics();
                         Logger.Log( "Player {0} enabled physics.",
                                     player.Name );
@@ -401,62 +485,72 @@ namespace Testosterone {
                     break;
 
                 case "grass":
-                    config.PhysicsGrass = !config.PhysicsGrass;
+                    Config.PhysicsGrass = !Config.PhysicsGrass;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} grass physics.",
-                                player.Name, config.PhysicsGrass ? "on" : "off" );
+                                player.Name, Config.PhysicsGrass ? "on" : "off" );
                     player.Message( "Grass physics: {0}",
-                                    config.PhysicsGrass ? "ON" : "OFF" );
+                                    Config.PhysicsGrass ? "ON" : "OFF" );
                     break;
 
                 case "lava":
-                    config.PhysicsLava = !config.PhysicsLava;
+                    Config.PhysicsLava = !Config.PhysicsLava;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} lava physics.",
-                                player.Name, config.PhysicsLava ? "on" : "off" );
+                                player.Name, Config.PhysicsLava ? "on" : "off" );
                     player.Message( "Lava physics: {0}",
-                                    config.PhysicsLava ? "ON" : "OFF" );
+                                    Config.PhysicsLava ? "ON" : "OFF" );
                     break;
 
                 case "plant":
                 case "plants":
-                    config.PhysicsPlants = !config.PhysicsPlants;
+                    Config.PhysicsPlants = !Config.PhysicsPlants;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} plant physics.",
-                                player.Name, config.PhysicsPlants ? "on" : "off" );
+                                player.Name, Config.PhysicsPlants ? "on" : "off" );
                     player.Message( "Plant physics: {0}",
-                                    config.PhysicsPlants ? "ON" : "OFF" );
+                                    Config.PhysicsPlants ? "ON" : "OFF" );
                     break;
 
                 case "sand":
-                    config.PhysicsSand = !config.PhysicsSand;
+                    Config.PhysicsSand = !Config.PhysicsSand;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} sand/gravel physics.",
-                                player.Name, config.PhysicsSand ? "on" : "off" );
+                                player.Name, Config.PhysicsSand ? "on" : "off" );
                     player.Message( "Sand physics: {0}",
-                                    config.PhysicsSand ? "ON" : "OFF" );
+                                    Config.PhysicsSand ? "ON" : "OFF" );
                     break;
 
                 case "snow":
-                    // TODO: CPE
-                    config.PhysicsSnow = !config.PhysicsSnow;
+                    if( !Config.ProtocolExtension ) {
+                        player.Message( "Cannot enable snow physics: protocol extensions are off." );
+                        return;
+                    }
+                    Config.PhysicsSnow = !Config.PhysicsSnow;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} snow physics.",
-                                player.Name, config.PhysicsSnow ? "on" : "off" );
+                                player.Name, Config.PhysicsSnow ? "on" : "off" );
                     player.Message( "Snow physics: {0}",
-                                    config.PhysicsSnow ? "ON" : "OFF" );
+                                    Config.PhysicsSnow ? "ON" : "OFF" );
                     break;
 
                 case "tree":
                 case "trees":
-                    config.PhysicsTrees = !config.PhysicsTrees;
+                    Config.PhysicsTrees = !Config.PhysicsTrees;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} tree physics.",
-                                player.Name, config.PhysicsTrees ? "on" : "off" );
+                                player.Name, Config.PhysicsTrees ? "on" : "off" );
                     player.Message( "Tree physics: {0}",
-                                    config.PhysicsTrees ? "ON" : "OFF" );
+                                    Config.PhysicsTrees ? "ON" : "OFF" );
                     break;
 
                 case "water":
-                    config.PhysicsWater = !config.PhysicsWater;
+                    Config.PhysicsWater = !Config.PhysicsWater;
+                    Config.Save();
                     Logger.Log( "Player {0} turned {1} water physics.",
-                                player.Name, config.PhysicsWater ? "on" : "off" );
+                                player.Name, Config.PhysicsWater ? "on" : "off" );
                     player.Message( "Water physics: {0}",
-                                    config.PhysicsWater ? "ON" : "OFF" );
+                                    Config.PhysicsWater ? "ON" : "OFF" );
                     break;
 
                 default:
@@ -473,15 +567,15 @@ namespace Testosterone {
         }
 
 
-        public void PlayersHandler( [NotNull] Player player ) {
-            Player[] players = server.Players;
+        public static void PlayersHandler( [NotNull] Player player ) {
+            Player[] players = Server.Players;
             Array.Sort( players, ( p1, p2 ) => StringComparer.OrdinalIgnoreCase.Compare( p1.Name, p2.Name ) );
             if( players.Length == 0 ) {
                 player.Message( "There are no players online." );
             } else {
                 string playerList;
-                if( player.IsOp || config.RevealOps ) {
-                    playerList = players.JoinToString( ", ", p => ( p.IsOp ? config.OpColor : "&F" ) + p.Name );
+                if( player.IsOp || Config.RevealOps ) {
+                    playerList = players.JoinToString( ", ", p => ( p.IsOp ? Config.OpColor : "&F" ) + p.Name );
                 } else {
                     playerList = players.JoinToString( ", ", p => p.Name );
                 }

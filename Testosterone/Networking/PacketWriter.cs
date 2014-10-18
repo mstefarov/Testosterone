@@ -7,8 +7,6 @@ using Testosterone.Packets;
 
 namespace Testosterone {
     public sealed class PacketWriter {
-        PacketManager manager;
-
         // Minecraft protocol uses fixed-length ASCII strings padded with spaces. Silly, I know.
         const int StringLength = 64;
         const byte ASCIISpace = 0x20;
@@ -23,7 +21,6 @@ namespace Testosterone {
         [CanBeNull] IPacketDescriptor descriptor;
         bool inPacket;
         PacketTransferMode transferMode;
-
 
         [NotNull]
         public Stream OutStream {
@@ -44,10 +41,8 @@ namespace Testosterone {
         }
 
 
-        public PacketWriter([NotNull] PacketManager manager, [NotNull] Stream stream) {
-            if (manager == null) throw new ArgumentNullException("manager");
+        public PacketWriter([NotNull] Stream stream) {
             if (stream == null) throw new ArgumentNullException("stream");
-            this.manager = manager;
             outStream = stream;
         }
 
@@ -146,7 +141,7 @@ namespace Testosterone {
             }
 
             inPacket = true;
-            descriptor = manager.GetDescriptor(opCode);
+            descriptor = PacketManager.GetDescriptor(opCode);
             return descriptor.Create();
         }
 

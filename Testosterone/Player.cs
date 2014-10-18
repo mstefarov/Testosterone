@@ -15,12 +15,7 @@ using JetBrains.Annotations;
 
 namespace Testosterone {
     public sealed partial class Player {
-        readonly Server server;
-
-        public Server Server {
-            get { return server; }
-        }
-
+        public static readonly Player Console = new Player( "(console)" );
 
         [NotNull]
         public string Name { get; private set; }
@@ -77,9 +72,7 @@ namespace Testosterone {
         readonly MovementHandler movementHandler;
 
 
-        internal Player( [NotNull]Server server, [NotNull] string name ) {
-            if (server == null) throw new ArgumentNullException("server");
-            this.server = server;
+        Player( [NotNull] string name ) {
             Name = name;
             ClientName = "Unknown";
             IsOp = true;
@@ -87,10 +80,8 @@ namespace Testosterone {
         }
 
 
-        public Player( [NotNull]Server server, [NotNull] TcpClient newClient ) {
-            if (server == null) throw new ArgumentNullException("server");
+        public Player( [NotNull] TcpClient newClient ) {
             if( newClient == null ) throw new ArgumentNullException( "newClient" );
-            this.server = server;
             try {
                 client = newClient;
                 movementHandler = new MovementHandler(this);
@@ -115,8 +106,8 @@ namespace Testosterone {
                 Name = "from " + IP; // placeholder for logging
                 stream = client.GetStream();
                 loggingStream = new LoggingStream(stream);
-                Reader = new PacketReader( server.PacketManager, loggingStream );
-                Writer = new PacketWriter( server.PacketManager, loggingStream );
+                Reader = new PacketReader( loggingStream );
+                Writer = new PacketWriter( loggingStream );
                 throttleCheckTimer = DateTime.UtcNow + ThrottleInterval;
 
                 if( !LoginSequence() ) return;
@@ -236,7 +227,7 @@ namespace Testosterone {
 
             // check if name is valid
             string name = Reader.ReadString();
-            if( !server.IsValidName( name ) ) {
+            if( !IsValidName( name ) ) {
                 KickNow( "Unacceptable player name." );
                 Logger.LogWarning( "Player from {0}: Unacceptable player name ({1})",
                                    IP, name );
@@ -246,13 +237,13 @@ namespace Testosterone {
             // check if name is verified
             string mppass = Reader.ReadString();
             byte magicNum = Reader.ReadByte();
-            if( server.config.VerifyNames ) {
+            if( Config.VerifyNames ) {
                 while( mppass.Length < 32 ) {
                     mppass = "0" + mppass;
                 }
                 MD5 hasher = MD5.Create();
                 StringBuilder sb = new StringBuilder( 32 );
-                foreach( byte b in hasher.ComputeHash( Encoding.ASCII.GetBytes( server.Heartbeat.Salt + name ) ) ) {
+                foreach( byte b in hasher.ComputeHash( Encoding.ASCII.GetBytes( Heartbeat.Salt + name ) ) ) {
                     sb.AppendFormat( "{0:x2}", b );
                 }
                 bool verified = sb.ToString().Equals( mppass, StringComparison.OrdinalIgnoreCase );
@@ -265,24 +256,40 @@ namespace Testosterone {
             }
             Name = name;
 
+            // check if player is banned
+            if( Server.Bans.Contains( Name ) ) {
+                KickNow( "You are banned!" );
+                Logger.LogWarning( "Banned player {0} tried to log in from {1}",
+                                   Name, IP );
+                return false;
+            }
+
+            // check if player's IP is banned
+            if( Server.IPBans.Contains( IP ) ) {
+                KickNow( "Your IP address is banned!" );
+                Logger.LogWarning( "Player {0} tried to log in from a banned IP ({1})",
+                                   Name, IP );
+                return false;
+            }
+
             // check whitelist
-            if( server.config.UseWhitelist && !server.Whitelist.Contains( Name ) ) {
+            if( Config.UseWhitelist && !Server.Whitelist.Contains( Name ) ) {
                 KickNow( "You are not on the whitelist!" );
                 Logger.LogWarning( "Player {0} tried to log in from ({1}), but was not on the whitelist.",
                                    Name, IP );
                 return false;
             }
 
-            // negotiate protocol extensions, if applicable TODO: CPE
-            /*if( Config.ProtocolExtension && magicNum == 0x42 ) {
+            // negotiate protocol extensions, if applicable
+            if( Config.ProtocolExtension && magicNum == 0x42 ) {
                 if( !NegotiateProtocolExtension() ) return false;
-            }*/
+            }
 
             // check if player is op
-            IsOp = server.Ops.Contains( Name );
+            IsOp = Server.Ops.Contains( Name );
 
             // register player and send map
-            if( !server.RegisterPlayer( this ) ) return false;
+            if( !Server.RegisterPlayer( this ) ) return false;
 
             // write handshake, send map
             Writer.Write( Packet.MakeHandshake( CanUseSolid ).Bytes );
@@ -293,8 +300,8 @@ namespace Testosterone {
                                     "Player {0} connected.", Name );
             HasBeenAnnounced = true;
             //Logger.Log( "Send: Message({0})", Config.MOTD );
-            Message( server.config.MOTD );
-            server.Commands.PlayersHandler( this );
+            Message( Config.MOTD );
+            Commands.PlayersHandler( this );
             return true;
         }
 
@@ -306,7 +313,7 @@ namespace Testosterone {
 
             // grab a compressed copy of the map
             byte[] blockData;
-            Map map = server.Map;
+            Map map = Server.Map;
             using( MemoryStream mapStream = new MemoryStream() ) {
                 using( GZipStream compressor = new GZipStream( mapStream, CompressionMode.Compress ) ) {
                     int convertedBlockCount = IPAddress.HostToNetworkOrder( map.Volume );
@@ -458,7 +465,7 @@ namespace Testosterone {
             if( !Map.InBounds( x, y, z ) ) return true;
 
             // check if player is close enough to place
-            if( !IsOp && server.config.LimitClickDistance || IsOp && server.config.OpLimitClickDistance ) {
+            if( !IsOp && Config.LimitClickDistance || IsOp && Config.OpLimitClickDistance ) {
                 if( Math.Abs( x * 32 - Position.X ) > MaxBlockPlacementRange ||
                     Math.Abs( y * 32 - Position.Y ) > MaxBlockPlacementRange ||
                     Math.Abs( z * 32 - Position.Z ) > MaxBlockPlacementRange ) {
@@ -469,7 +476,7 @@ namespace Testosterone {
             }
 
             // check click rate
-            if( !IsOp && server.config.LimitClickRate || IsOp && server.config.OpLimitClickRate ) {
+            if( !IsOp && Config.LimitClickRate || IsOp && Config.OpLimitClickRate ) {
                 if( DetectBlockSpam() ) {
                     KickNow( "Hacking detected." );
                     Logger.LogWarning( "Player {0} tried to place blocks too quickly.", Name );
@@ -559,7 +566,7 @@ namespace Testosterone {
                 return false;
             }
 
-            if( !IsOp && server.config.LimitChatRate || IsOp && server.config.OpLimitChatRate ) {
+            if( !IsOp && Config.LimitChatRate || IsOp && Config.OpLimitChatRate ) {
                 if( DetectChatSpam() ) return false;
             }
 
@@ -606,17 +613,17 @@ namespace Testosterone {
                 } else if( rawMessage[1] == '/' ) {
                     rawMessage = rawMessage.Substring( 1 );
                 } else {
-                    server.Commands.Parse( this, rawMessage );
+                    Commands.Parse( this, rawMessage );
                     return;
                 }
             }
 
             // broadcast chat
             Logger.LogChat( "{0}: {1}", Name, rawMessage );
-            if( server.config.RevealOps && IsOp ) {
+            if( Config.RevealOps && IsOp ) {
                 Server.Players.Message( null, false,
                                         "{0}{1}&F: {2}",
-                                        server.config.OpColor, Name, rawMessage );
+                                        Config.OpColor, Name, rawMessage );
             } else {
                 Server.Players.Message( null, false,
                                         "&F{0}: {1}",
@@ -630,8 +637,8 @@ namespace Testosterone {
             if( formatArgs.Length > 0 ) {
                 message = String.Format( message, formatArgs );
             }
-            if( this == server.ConsolePlayer ) {
-                Console.WriteLine( message );
+            if( this == Console ) {
+                System.Console.WriteLine( message );
             } else {
                 foreach( Packet p in new LineWrapper( "&E" + message ) ) {
                     Send( p );
@@ -645,8 +652,8 @@ namespace Testosterone {
             if( formatArgs.Length > 0 ) {
                 message = String.Format( message, formatArgs );
             }
-            if( this == server.ConsolePlayer ) {
-                Console.WriteLine( message );
+            if( this == Console ) {
+                System.Console.WriteLine( message );
             } else {
                 foreach( Packet p in new LineWrapper( "&E" + message ) ) {
                     Writer.Write( p.Bytes );
@@ -662,9 +669,8 @@ namespace Testosterone {
 
 
         public bool CheckIfConsole() {
-            bool isConsole = (this == server.ConsolePlayer);
-            if( isConsole ) Message( "You cannot use this command from console." );
-            return isConsole;
+            if( this == Console ) Message( "You cannot use this command from console." );
+            return (this == Console);
         }
 
 
@@ -673,7 +679,7 @@ namespace Testosterone {
             if( givenName == null ) {
                 Message( "This command requires a player name." );
                 return false;
-            } else if( !server.IsValidName( givenName ) ) {
+            } else if( !IsValidName( givenName ) ) {
                 Message( "\"{0}\" is not a valid player name.", givenName );
                 return false;
             } else {
@@ -696,7 +702,7 @@ namespace Testosterone {
 
 
         bool DetectChatSpam() {
-            if( this == server.ConsolePlayer ) return false;
+            if( this == Console ) return false;
             if( spamChatLog.Count >= AntispamMessageCount ) {
                 DateTime oldestTime = spamChatLog.Dequeue();
                 if( DateTime.UtcNow.Subtract( oldestTime ).TotalSeconds < AntispamInterval ) {
@@ -714,19 +720,19 @@ namespace Testosterone {
         #region Permissions
 
         bool CanUseWater {
-            get { return ( server.config.AllowWaterBlocks || server.config.OpAllowWaterBlocks && IsOp ); }
+            get { return ( Config.AllowWaterBlocks || Config.OpAllowWaterBlocks && IsOp ); }
         }
 
         bool CanUseLava {
-            get { return ( server.config.AllowLavaBlocks || server.config.OpAllowLavaBlocks && IsOp ); }
+            get { return ( Config.AllowLavaBlocks || Config.OpAllowLavaBlocks && IsOp ); }
         }
 
         bool CanUseGrass {
-            get { return ( server.config.AllowGrassBlocks || server.config.OpAllowGrassBlocks && IsOp ); }
+            get { return ( Config.AllowGrassBlocks || Config.OpAllowGrassBlocks && IsOp ); }
         }
 
         bool CanUseSolid {
-            get { return ( server.config.AllowSolidBlocks || server.config.OpAllowSolidBlocks && IsOp ); }
+            get { return ( Config.AllowSolidBlocks || Config.OpAllowSolidBlocks && IsOp ); }
         }
 
         #endregion
@@ -736,6 +742,13 @@ namespace Testosterone {
             LastActiveTime = DateTime.UtcNow;
         }
 
+
+        static readonly Regex EmailRegex = new Regex( @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$", RegexOptions.Compiled ),
+              AccountRegex = new Regex( @"^[a-zA-Z0-9._]{2,16}$", RegexOptions.Compiled );
+
+        public static bool IsValidName( [NotNull] string name ) {
+            return AccountRegex.IsMatch( name ) || Config.AllowEmails && EmailRegex.IsMatch( name );
+        }
 
 
         // checks if message contains any characters that cannot be typed in from Minecraft client

@@ -21,9 +21,6 @@ namespace Testosterone {
         public bool IsActive;
 
 
-        public Server Server { get; internal set; }
-
-
         public Map( int width, int length, int height ) {
             if( width < 16 || width > 2048 || length < 16 || length > 2048 || height < 16 || height > 2048 ) {
                 throw new ArgumentException( "Invalid map dimension(s)." );
@@ -161,7 +158,7 @@ namespace Testosterone {
         void PhysicsOnRemoved( int x, int y, int z, Block oldBlock ) {
             if( !physicsEnabled )
                 return;
-            if( Server.config.PhysicsWater && oldBlock == Block.Sponge ) {
+            if( Config.PhysicsWater && oldBlock == Block.Sponge ) {
                 waterPhysics.OnSpongeRemoved( x, y, z );
             }
         }
@@ -171,16 +168,16 @@ namespace Testosterone {
             if( !physicsEnabled )
                 return;
 
-            if(  Server.config.PhysicsWater && newBlock == Block.Water ) {
+            if( Config.PhysicsWater && newBlock == Block.Water ) {
                 PhysicsQueueTick( x, y, z, Block.Water );
 
-            } else if(  Server.config.PhysicsLava && newBlock == Block.Lava ) {
+            } else if( Config.PhysicsLava && newBlock == Block.Lava ) {
                 PhysicsQueueTick( x, y, z, Block.Lava );
 
-            } else if(  Server.config.PhysicsSand && ( newBlock == Block.Sand || newBlock == Block.Gravel ) ) {
+            } else if( Config.PhysicsSand && ( newBlock == Block.Sand || newBlock == Block.Gravel ) ) {
                 sandPhysics.Trigger( x, y, z );
 
-            } else if(  Server.config.PhysicsSnow && newBlock == Block.Snow ) {
+            } else if( Config.PhysicsSnow && newBlock == Block.Snow ) {
                 snowPhysics.Trigger( x, y, z );
 
             } else if( newBlock == Block.Sponge ) {
@@ -195,15 +192,15 @@ namespace Testosterone {
                 return;
             Block thisBlock = GetBlock( x, y, z );
 
-            if(  Server.config.PhysicsSand && ( thisBlock == Block.Sand || thisBlock == Block.Gravel ) ) {
+            if( Config.PhysicsSand && ( thisBlock == Block.Sand || thisBlock == Block.Gravel ) ) {
                 sandPhysics.Trigger( x, y, z );
-            } else if(  Server.config.PhysicsSnow && thisBlock == Block.Snow ) {
+            } else if( Config.PhysicsSnow && thisBlock == Block.Snow ) {
                 snowPhysics.Trigger( x, y, z );
             }
-            if(  Server.config.PhysicsWater ) {
+            if( Config.PhysicsWater ) {
                 waterPhysics.OnNeighborUpdated( x, y, z, thisBlock, updatedNeighbor );
             }
-            if(  Server.config.PhysicsLava ) {
+            if( Config.PhysicsLava ) {
                 lavaPhysics.OnNeighborUpdated( x, y, z, thisBlock, updatedNeighbor );
             }
         }
@@ -355,7 +352,9 @@ namespace Testosterone {
             map.Blocks.MemSet( (byte)Block.Stone, 0, width*length*(height/2 - 5) );
             map.Blocks.MemSet( (byte)Block.Dirt, width*length*(height/2 - 5), width*length*4 );
             map.Blocks.MemSet( (byte)Block.Grass, width*length*(height/2 - 1), width*length );
-            // TODO enable physics if config.Physics
+            if( Config.Physics ) {
+                map.EnablePhysics();
+            }
             return map;
         }
 
