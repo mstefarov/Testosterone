@@ -6,59 +6,64 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Linq;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
+using Testosterone.Packets;
 
 namespace Testosterone {
-    static class Server {
-        public const string VersionString = "FemtoCraft 1.35";
+    public class Server {
+        public readonly Player ConsolePlayer;
+        public readonly Heartbeat Heartbeat;
+        public readonly Commands Commands;
+        public readonly PacketManager PacketManager;
+
+        public const string VersionString = "Testosterone";
 
         [NotNull]
-        public static Map Map { get; private set; }
+        public Map Map { get; private set; }
         const string MapFileName = "map.lvl";
 
         [NotNull]
-        public static PlayerNameSet Bans { get; private set; }
-        const string BansFileName = "banned.txt";
-
-        [NotNull]
-        public static PlayerNameSet Ops { get; private set; }
+        public PlayerNameSet Ops { get; private set; }
         const string OpsFileName = "admins.txt";
 
         [NotNull]
-        public static IPAddressSet IPBans { get; private set; }
-        const string IPBanFileName = "banned-ip.txt";
-
-        [NotNull]
-        public static PlayerNameSet Whitelist { get; private set; }
+        public PlayerNameSet Whitelist { get; private set; }
         const string WhitelistFileName = "whitelist.txt";
 
+        internal readonly Config config;
+        bool isRunning = false;
 
-        static int Main() {
+
+        public Server(Config config) {
+            this.config = config;
+            ConsolePlayer = new Player( this, "(console)" );
+            Heartbeat = new Heartbeat(this);
+            Commands = new Commands(this);
+            PacketManager = new PacketManager();
+        }
+
+
+        public void Start() {
+            if(isRunning)throw new InvalidOperationException("Already running!");
+            isRunning = true;
 #if !DEBUG
             try {
 #endif
-                Console.Title = VersionString;
-                Logger.Log( "Starting {0}", VersionString );
-
-                // load config
-                Config.Load();
-                Console.Title = Config.ServerName + " - " + VersionString;
+                Logger.Log( "Starting new instance of {0}", VersionString );
 
                 // prepare to accept players and fire up the heartbeat
-                for( byte i = 1; i <= sbyte.MaxValue; i++ ) {
+                for( byte i = 1; i <= SByte.MaxValue; i++ ) {
                     FreePlayerIDs.Push( i );
                 }
                 UpdatePlayerList();
                 Heartbeat.Start();
 
                 // load player and IP lists
-                Bans = new PlayerNameSet( BansFileName );
-                Ops = new PlayerNameSet( OpsFileName );
-                IPBans = new IPAddressSet( IPBanFileName );
-                Logger.Log( "Server: Tracking {0} bans, {1} ip-bans, and {2} ops.",
-                            Bans.Count, IPBans.Count, Ops.Count );
-                if( Config.UseWhitelist ) {
-                    Whitelist = new PlayerNameSet( WhitelistFileName );
+                Ops = new PlayerNameSet(this, OpsFileName );
+                Logger.Log( "Server: Tracking {2} ops.", Ops.Count );
+                if( config.UseWhitelist ) {
+                    Whitelist = new PlayerNameSet( this,WhitelistFileName );
                     Logger.Log( "Using a whitelist ({0} players): {1}",
                                 Whitelist.Count, Whitelist.GetCopy().JoinToString( ", " ) );
                 }
@@ -73,16 +78,14 @@ namespace Testosterone {
                     Map.Save( MapFileName );
                 }
                 Map.IsActive = true;
-                Player.Console.Map = Map;
+                ConsolePlayer.Map = Map;
 
                 // start listening for incoming connections
-                listener = new TcpListener( Config.IP, Config.Port );
+                listener = new TcpListener( config.IP, config.Port );
                 listener.Start();
 
                 // start the scheduler thread
-                Thread schedulerThread = new Thread( SchedulerLoop ) {
-                                                                         IsBackground = true
-                                                                     };
+                Thread schedulerThread = new Thread( SchedulerLoop ) {IsBackground = true};
                 schedulerThread.Start();
 
                 // listen for console input
@@ -90,10 +93,10 @@ namespace Testosterone {
                     string input = Console.ReadLine();
                     if( input == null ) {
                         Shutdown();
-                        return 0;
+                        return;
                     }
                     try {
-                        Player.Console.ProcessMessage( input.Trim() );
+                        ConsolePlayer.ProcessMessage( input.Trim() );
                     } catch( Exception ex ) {
                         Logger.LogError( "Could not process message: {0}", ex );
                     }
@@ -102,13 +105,12 @@ namespace Testosterone {
 #if !DEBUG
             } catch( Exception ex ) {
                 Logger.LogError( "Server crashed: {0}", ex );
-                return 1;
             }
 #endif
         }
 
 
-        static void Shutdown() {
+        public void Shutdown() {
             Logger.Log( "Shutting down" );
             lock( PlayerListLock ) {
                 foreach( Player player in PlayerIndex ) {
@@ -123,17 +125,17 @@ namespace Testosterone {
 
         #region Scheduler
 
-        static TcpListener listener;
+        TcpListener listener;
         static readonly TimeSpan MapSaveInterval = TimeSpan.FromSeconds( 60 );
         static readonly TimeSpan PingInterval = TimeSpan.FromSeconds( 5 );
         static TimeSpan physicsInterval;
 
 
-        static void SchedulerLoop() {
+        void SchedulerLoop() {
             DateTime physicsTick = DateTime.UtcNow;
             DateTime mapTick = DateTime.UtcNow;
             DateTime pingTick = DateTime.UtcNow;
-            physicsInterval = TimeSpan.FromMilliseconds( Config.PhysicsTick );
+            physicsInterval = TimeSpan.FromMilliseconds( config.PhysicsTick );
             Logger.Log( "{0} is ready to go!", VersionString );
 
             while( true ) {
@@ -165,14 +167,12 @@ namespace Testosterone {
         }
 
 
-        static void AcceptCallback( [NotNull] IAsyncResult e ) {
-            // ReSharper disable ObjectCreationAsStatement
-            new Player( listener.EndAcceptTcpClient( e ) );
-            // ReSharper restore ObjectCreationAsStatement
+        void AcceptCallback( [NotNull] IAsyncResult e ) {
+            new Player( this, listener.EndAcceptTcpClient( e ) );
         }
 
 
-        static void MapSaveCallback( [NotNull] object unused ) {
+        void MapSaveCallback( [NotNull] object unused ) {
             try {
                 if( Map.ChangedSinceSave ) {
                     Map.ChangedSinceSave = false;
@@ -190,14 +190,14 @@ namespace Testosterone {
         #region Player List
 
         [NotNull]
-        public static Player[] Players { get; private set; }
+        public Player[] Players { get; private set; }
 
-        static readonly Stack<byte> FreePlayerIDs = new Stack<byte>( 127 );
-        static readonly List<Player> PlayerIndex = new List<Player>();
-        static readonly object PlayerListLock = new object();
+         readonly Stack<byte> FreePlayerIDs = new Stack<byte>( 127 );
+         readonly List<Player> PlayerIndex = new List<Player>();
+         readonly object PlayerListLock = new object();
 
 
-        public static bool RegisterPlayer( [NotNull] Player player ) {
+        public bool RegisterPlayer( [NotNull] Player player ) {
             if( player == null ) throw new ArgumentNullException( "player" );
             lock( PlayerListLock ) {
                 // Kick other sessions with same player name
@@ -212,10 +212,10 @@ namespace Testosterone {
 
                 // check the number of connections from this IP.
                 if( !player.IP.Equals( IPAddress.Loopback ) &&
-                    ( !player.IsOp && Config.MaxConnections > 0 || player.IsOp && Config.OpMaxConnections > 0 ) ) {
+                    ( !player.IsOp && config.MaxConnections > 0 || player.IsOp && config.OpMaxConnections > 0 ) ) {
                     int connections = PlayerIndex.Count( p => p.IP.Equals( player.IP ) );
-                    int maxConnections = ( player.IsOp ? Config.OpMaxConnections : Config.MaxConnections );
-                    if( connections >= Config.MaxConnections ) {
+                    int maxConnections = ( player.IsOp ? config.OpMaxConnections : config.MaxConnections );
+                    if( connections >= config.MaxConnections ) {
                         player.Kick( "Too many connections from your IP address!" );
                         Logger.LogWarning(
                             "Player {0} was not allowed to join: connection limit of {1} reached for {2}.",
@@ -225,8 +225,8 @@ namespace Testosterone {
                 }
 
                 // check if server is full
-                if( PlayerIndex.Count >= Config.MaxPlayers ) {
-                    if( Config.AdminSlot && player.IsOp ) {
+                if( PlayerIndex.Count >= config.MaxPlayers ) {
+                    if( config.AdminSlot && player.IsOp ) {
                         // if player has a reserved slot, kick someone to make room
                         Player playerToKick = Players.OrderBy( p => p.LastActiveTime )
                                                      .FirstOrDefault( p => p.IsOp );
@@ -250,8 +250,8 @@ namespace Testosterone {
 
                 // Assign index and spawn player
                 player.Id = FreePlayerIDs.Pop();
-                if( Config.RevealOps && player.IsOp ) {
-                    PlayerIndex.Send( null, Packet.MakeAddEntity( player.Id, Config.OpColor + player.Name, Map.Spawn ) );
+                if( config.RevealOps && player.IsOp ) {
+                    PlayerIndex.Send( null, Packet.MakeAddEntity( player.Id, config.OpColor + player.Name, Map.Spawn ) );
                 } else {
                     PlayerIndex.Send( null, Packet.MakeAddEntity( player.Id, player.Name, Map.Spawn ) );
                 }
@@ -269,7 +269,7 @@ namespace Testosterone {
         }
 
 
-        public static void SpawnPlayers( [NotNull] Player player ) {
+        public void SpawnPlayers( [NotNull] Player player ) {
             if( player == null ) throw new ArgumentNullException( "player" );
             lock( PlayerListLock ) {
                 foreach( Player other in PlayerIndex ) {
@@ -281,7 +281,7 @@ namespace Testosterone {
         }
 
 
-        public static void UnregisterPlayer( [NotNull] Player player ) {
+        public void UnregisterPlayer( [NotNull] Player player ) {
             if( player == null ) throw new ArgumentNullException( "player" );
             lock( PlayerListLock ) {
                 if( !player.HasRegistered ) return;
@@ -302,20 +302,20 @@ namespace Testosterone {
         }
 
 
-        static void UpdatePlayerList() {
+        void UpdatePlayerList() {
             Players = PlayerIndex.ToArray();
         }
 
 
         [CanBeNull]
-        public static Player FindPlayerExact( [NotNull] string fullName ) {
+        public Player FindPlayerExact( [NotNull] string fullName ) {
             if( fullName == null ) throw new ArgumentNullException( "fullName" );
             return Players.FirstOrDefault( p => p.Name.Equals( fullName, StringComparison.OrdinalIgnoreCase ) );
         }
 
 
         [CanBeNull]
-        public static Player FindPlayer( [NotNull] Player player, [NotNull] string partialName ) {
+        public Player FindPlayer( [NotNull] Player player, [NotNull] string partialName ) {
             if( player == null ) throw new ArgumentNullException( "player" );
             if( partialName == null ) throw new ArgumentNullException( "partialName" );
             List<Player> matches = new List<Player>();
@@ -342,13 +342,13 @@ namespace Testosterone {
         #endregion
 
 
-        public static void ChangeMap( [NotNull] Map newMap ) {
+        public void ChangeMap( [NotNull] Map newMap ) {
             if( newMap == null ) throw new ArgumentNullException( "newMap" );
             lock( PlayerListLock ) {
                 foreach( Player player in PlayerIndex ) {
                     player.ChangeMap( newMap );
                 }
-                Player.Console.Map = newMap;
+                ConsolePlayer.Map = newMap;
                 Map.IsActive = false;
                 Map = newMap;
                 Map.IsActive = true;
@@ -357,43 +357,13 @@ namespace Testosterone {
         }
 
 
-        [StringFormatMethod( "message" )]
-        public static void Message( [NotNull] this IEnumerable<Player> source,
-                                    [NotNull] string message, [NotNull] params object[] formatArgs ) {
-            Message( source, null, true, message, formatArgs );
-        }
+        static readonly Regex EmailRegex = new Regex( @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$" );
+
+        static readonly Regex AccountRegex = new Regex( @"^[a-zA-Z0-9._]{2,16}$" );
 
 
-        [StringFormatMethod( "message" )]
-        public static void Message( [NotNull] this IEnumerable<Player> source,
-                                    [CanBeNull] Player except, bool sentToConsole,
-                                    [NotNull] string message, [NotNull] params object[] formatArgs ) {
-            if( source == null ) throw new ArgumentNullException( "source" );
-            if( message == null ) throw new ArgumentNullException( "message" );
-            if( formatArgs == null ) throw new ArgumentNullException( "formatArgs" );
-            if( formatArgs.Length > 0 ) {
-                message = String.Format( message, formatArgs );
-            }
-            Packet[] packets = new LineWrapper( "&E" + message ).ToArray();
-            foreach( Player player in source ) {
-                if( player == except ) continue;
-                for( int i = 0; i < packets.Length; i++ ) {
-                    player.Send( packets[i] );
-                }
-            }
-            if( except != Player.Console && sentToConsole ) {
-                Logger.Log( message );
-            }
-        }
-
-
-        public static void Send( [NotNull] this IEnumerable<Player> source, [CanBeNull] Player except,
-                                 Packet packet ) {
-            if( source == null ) throw new ArgumentNullException( "source" );
-            foreach( Player player in source ) {
-                if( player == except ) continue;
-                player.Send( packet );
-            }
+        public bool IsValidName( [NotNull] string name ) {
+            return AccountRegex.IsMatch( name ) || config.AllowEmails && EmailRegex.IsMatch( name );
         }
     }
 }

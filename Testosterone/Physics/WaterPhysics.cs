@@ -25,7 +25,7 @@ namespace Testosterone {
 
 
         public void OnNeighborUpdated( int x, int y, int z, Block thisBlock, Block updatedNeighbor ) {
-            if( Config.PhysicsFloodProtection && z >= map.WaterLevel ) return;
+            if( map.Server.config.PhysicsFloodProtection && z >= map.WaterLevel ) return;
             if( ( thisBlock == Block.Water || thisBlock == Block.StillWater ) &&
                 ( updatedNeighbor == Block.Lava || updatedNeighbor == Block.StillLava ) ) {
                 map.SetBlock( null, x, y, z, LavaPhysics.LavaPlusWater );
@@ -60,7 +60,7 @@ namespace Testosterone {
 
 
         public void OnTick( int x, int y, int z ) {
-            if( Config.PhysicsFloodProtection && z >= map.WaterLevel ) return;
+            if( map.Server.config.PhysicsFloodProtection && z >= map.WaterLevel ) return;
             bool updated = false;
             do {
                 z--;

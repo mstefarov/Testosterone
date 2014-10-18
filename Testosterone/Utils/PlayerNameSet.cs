@@ -6,13 +6,13 @@ using System.Linq;
 using JetBrains.Annotations;
 
 namespace Testosterone {
-    sealed class PlayerNameSet {
+    public sealed class PlayerNameSet {
         readonly HashSet<string> names = new HashSet<string>();
         readonly object syncRoot = new object();
         readonly string fileName;
 
 
-        public PlayerNameSet( [NotNull] string fileName ) {
+        public PlayerNameSet( Server server, [NotNull] string fileName ) {
             if( fileName == null ) throw new ArgumentNullException( "fileName" );
             this.fileName = fileName;
             if( !File.Exists( fileName ) ) {
@@ -21,7 +21,7 @@ namespace Testosterone {
             }
 
             foreach( string name in File.ReadAllLines( fileName ) ) {
-                if( Player.IsValidName( name ) ) {
+                if( server.IsValidName( name ) ) {
                     names.Add( name.ToLower() );
                 } else {
                     Logger.LogWarning( "PlayerNameSet ({0}): Invalid player name \"{1}\"",

@@ -7,6 +7,7 @@ namespace Testosterone {
     public partial struct Packet {
         public const byte ProtocolVersion = 7;
         public readonly byte[] Bytes;
+        static Server Server; // TODO replace
 
 
         public OpCode OpCode {
@@ -32,8 +33,8 @@ namespace Testosterone {
             //Logger.Log( "Send: Handshake({0},{1},{2})", Config.ServerName, Config.MOTD, isOp ? (byte)100 : (byte)0 );
             Packet packet = new Packet( OpCode.Handshake );
             packet.Bytes[1] = ProtocolVersion;
-            Encoding.ASCII.GetBytes( Config.ServerName.PadRight( 64 ), 0, 64, packet.Bytes, 2 );
-            Encoding.ASCII.GetBytes( Config.MOTD.PadRight( 64 ), 0, 64, packet.Bytes, 66 );
+            Encoding.ASCII.GetBytes( Server.config.ServerName.PadRight( 64 ), 0, 64, packet.Bytes, 2 );
+            Encoding.ASCII.GetBytes( Server.config.MOTD.PadRight( 64 ), 0, 64, packet.Bytes, 66 );
             packet.Bytes[130] = isOp ? (byte)100 : (byte)0;
             return packet;
         }

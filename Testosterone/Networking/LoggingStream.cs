@@ -75,6 +75,7 @@ namespace Testosterone {
                 WriteRequested.Raise(this, new DataTransferEventArgs(dataToWrite));
 
                 baseStream.Write(buffer, offset, count);
+                baseStream.Flush();
 
                 BytesWritten += count;
                 DataWritten.Raise(this, new DataTransferEventArgs(dataToWrite));
@@ -121,6 +122,7 @@ namespace Testosterone {
             writingOneByte = false;
 
             if (!writingManyBytes) {
+                baseStream.Flush();
                 BytesWritten++;
                 DataWritten.Raise(this, new DataTransferEventArgs(new[] { value }));
             }

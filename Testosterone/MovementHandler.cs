@@ -80,7 +80,7 @@ namespace Testosterone {
             // if player is just pushed around, rotation does not change (and timer should not reset)
             if (rotChanged) Player.ResetIdleTimer();
 
-            if (!Player.IsOp && !Config.AllowSpeedHack || Player.IsOp && !Config.OpAllowSpeedHack) {
+            if (!Player.IsOp && !Player.Server.config.AllowSpeedHack || Player.IsOp && !Player.Server.config.OpAllowSpeedHack) {
                 int distSquared = delta.X*delta.X + delta.Y*delta.Y + delta.Z*delta.Z;
                 // speedhack detection
                 if (DetectMovementPacketSpam()) return;
@@ -169,7 +169,7 @@ namespace Testosterone {
                 positionSyncCounter = 0;
             }
 
-            Server.Players.Send(Player, packet);
+            Player.Server.Players.Send(Player, packet);
         }
 
 

@@ -36,7 +36,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Testosterone.Server</StartupObject>
+    <StartupObject>Testosterone.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>acorn.ico</ApplicationIcon>
@@ -46,6 +46,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BroadcastExtensions.cs" />
     <Compile Include="MovementHandler.cs" />
     <Compile Include="Networking\LoggingStream.cs" />
     <Compile Include="Networking\PacketTransferMode.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="Packets\PacketDirection.cs" />
     <Compile Include="Packets\PacketManager.cs" />
     <Compile Include="Physics\SnowPhysics.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Utils\PerlinNoise.cs" />
     <Compile Include="Physics\LavaPhysics.cs" />
     <Compile Include="Physics\PhysicsUpdate.cs" />
@@ -67,7 +69,6 @@
     <Compile Include="Block.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Utils\IPAddressSet.cs" />
-    <Compile Include="DatMapConverter.cs" />
     <Compile Include="Utils\JetBrains.Annotations.cs" />
     <Compile Include="Commands.cs" />
     <Compile Include="Networking\Heartbeat.cs" />

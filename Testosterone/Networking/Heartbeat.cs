@@ -6,33 +6,39 @@ using System.Net.Cache;
 using System.Threading;
 
 namespace Testosterone {
-    static class Heartbeat {
+    public class Heartbeat {
+        readonly Server server;
+        
+        internal Heartbeat(Server server) {
+            this.server = server;
+        }
+
         static readonly TimeSpan Timeout = TimeSpan.FromSeconds( 10 );
         static readonly TimeSpan Delay = TimeSpan.FromSeconds( 25 );
         const string UrlFileName = "externalurl.txt";
 
-        public static readonly string Salt = Util.GenerateSalt();
+        public readonly string Salt = Util.GenerateSalt();
         static Uri uri;
 
 
-        public static void Start() {
+        public void Start() {
             Thread heartbeatThread = new Thread( Beat ) { IsBackground = true };
             heartbeatThread.Start();
         }
 
 
-        static void Beat() {
+        void Beat() {
             while( true ) {
                 try {
                     string requestUri =
                         String.Format( "{0}?public={1}&max={2}&users={3}&port={4}&version=7&salt={5}&name={6}",
-                                       Config.HeartbeatUrl,
-                                       Config.Public,
-                                       Config.MaxPlayers,
-                                       Server.Players.Length,
-                                       Config.Port,
+                                       server.config.HeartbeatUrl,
+                                       server.config.Public,
+                                       server.config.MaxPlayers,
+                                       server.Players.Length,
+                                       server.config.Port,
                                        Uri.EscapeDataString( Salt ),
-                                       Uri.EscapeDataString( Config.ServerName ) );
+                                       Uri.EscapeDataString( server.config.ServerName ) );
 
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create( requestUri );
                     request.Method = "GET";
@@ -68,8 +74,8 @@ namespace Testosterone {
         }
 
 
-        static IPEndPoint BindIPEndPointCallback( ServicePoint servicePoint, IPEndPoint remoteEndPoint, int retryCount ) {
-            return new IPEndPoint( Config.IP, 0 );
+        IPEndPoint BindIPEndPointCallback( ServicePoint servicePoint, IPEndPoint remoteEndPoint, int retryCount ) {
+            return new IPEndPoint( server.config.IP, 0 );
         }
     }
 }
